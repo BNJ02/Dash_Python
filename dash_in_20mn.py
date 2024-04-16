@@ -1,16 +1,21 @@
 #Initialize a Dash app and create a layout with a single HTML element that displays the text "Hello World".
 
-# Import the Dash library and the html module
-from dash import Dash, html
+# Import packages
+from dash import Dash, html, dash_table
+import pandas as pd
 
-# Initialize the Dash app
+# Incorporate data
+df = pd.read_csv('https://raw.githubusercontent.com/plotly/datasets/master/gapminder2007.csv')
+
+# Initialize the app
 app = Dash(__name__)
 
-# Define the layout of the Dash app
+# App layout
 app.layout = html.Div([
-    html.Div(children='Hello World')
+    html.Div(children='My First App with Data'),
+    dash_table.DataTable(data=df.to_dict('records'), page_size=10)
 ])
 
-# Run the Dash app
+# Run the app
 if __name__ == '__main__':
     app.run(debug=True)
