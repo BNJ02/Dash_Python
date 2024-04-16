@@ -1,8 +1,9 @@
 #Initialize a Dash app and create a layout with a single HTML element that displays the text "Hello World".
 
 # Import packages
-from dash import Dash, html, dash_table
+from dash import Dash, html, dash_table, dcc
 import pandas as pd
+import plotly.express as px
 
 # Incorporate data
 df = pd.read_csv('https://raw.githubusercontent.com/plotly/datasets/master/gapminder2007.csv')
@@ -12,10 +13,12 @@ app = Dash(__name__)
 
 # App layout
 app.layout = html.Div([
-    html.Div(children='My First App with Data'),
-    dash_table.DataTable(data=df.to_dict('records'), page_size=10)
+    html.Div(children='My First App with Data and a Graph'),
+    dash_table.DataTable(data=df.to_dict('records'), page_size=10),
+    dcc.Graph(figure=px.histogram(df, x='continent', y='lifeExp', histfunc='avg'))
 ])
 
 # Run the app
 if __name__ == '__main__':
     app.run(debug=True)
+
