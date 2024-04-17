@@ -1,4 +1,4 @@
-#Initialize a Dash app and create a layout with a single HTML element that displays the text "Hello World".
+# Initialize a Dash app and create a layout with a single HTML element that displays the text "Hello World".
 
 # Import packages
 from dash import Dash, html, dash_table, dcc, callback, Output, Input
