@@ -1,6 +1,5 @@
-from dash import Dash, dcc, html, Input, Output, State, callback, no_update
+from dash import Dash, dcc, html, Input, Output, callback, no_update
 import plotly.express as px
-import plotly.io as pio
 import numpy as np
 from skimage import data
 
@@ -41,7 +40,7 @@ app.layout = html.Div([
             'width': '100%',
             'height': '60px',
             'lineHeight': '60px',
-            'borderWidth': '1px',
+            'borderWidsth': '1px',
             'borderStyle': 'dashed',
             'borderRadius': '5px',
             'textAlign': 'center',
