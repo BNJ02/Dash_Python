@@ -17,6 +17,15 @@ fig.update_layout(dragmode="drawrect")
 # Création de l'histogramme de l'image
 fig_hist = px.histogram(img.ravel())
 
+# Configuration des boutons de la barre de mode
+config = {
+    "modeBarButtonsToAdd": [
+        "drawcircle",       # Bouton pour dessiner un cercle
+        "drawrect",         # Bouton pour dessiner un rectangle
+        "eraseshape",       # Bouton pour effacer une forme
+    ]
+}
+
 # Initialisation de l'application Dash
 app = Dash(__name__)
 
@@ -25,11 +34,11 @@ app.layout = html.Div(
     [
         html.H3("Dessinez une forme, puis modifiez-la."),
         html.Div(
-            [dcc.Graph(id="fig-pic", figure=fig),],  # Affichage de la figure avec l'image
+            [dcc.Graph(id="fig-pic", figure=fig, config=config),],  # Affichage de la figure avec l'image
             style={"width": "60%", "display": "inline-block", "padding": "0 0"},
         ),
         html.Div(
-            [dcc.Graph(id="graph-hist", figure=fig_hist),],  # Affichage de l'histogramme initial
+            [dcc.Graph(id="graph-hist", figure=fig_hist, config=config),],  # Affichage de l'histogramme initial
             style={"width": "40%", "display": "inline-block", "padding": "0 0"},
         ),
         html.Pre(id="annotations"),  # Affichage préformaté pour les données d'annotation
