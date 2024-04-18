@@ -10,7 +10,7 @@ Ce dépôt Git est fait pour m'initier aux applications Dash développées en la
 ## Project Description
 
 * Faire les tutoriels officiels de Dash
-* Créer un mini outil d'annotations de spectrogramme
+* Créer un mini outil d'annotations
 
 ## Installation
 
