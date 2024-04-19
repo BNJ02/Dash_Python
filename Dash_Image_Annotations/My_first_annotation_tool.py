@@ -23,7 +23,7 @@ fig.update_layout(dragmode="drawrect")
 # Configuration des boutons d'annotations à ajouter à la barre d'outils
 config = {
     "modeBarButtonsToAdd": [
-        "drawcircle",        # Cercle
+        # "drawcircle",        # Cercle
         "drawrect",          # Rectangle
         "eraseshape",        # Effacer la forme
     ]
@@ -84,6 +84,7 @@ def update_output(contents):
         decoded_img = base64.b64decode(img_data)
         img_obj = Image.open(io.BytesIO(decoded_img))
         img_array = np.array(img_obj)
+        print(img_array.shape)
         # Créer une nouvelle figure Plotly Express avec l'objet image
         new_fig = px.imshow(np.array(img_obj))
         new_fig.update_layout(dragmode="drawrect")
