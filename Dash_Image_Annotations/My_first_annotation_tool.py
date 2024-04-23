@@ -18,34 +18,40 @@ fig = px.imshow(img_default)
 # Conversion de l'image en tableau NumPy
 img_array = np.array(img_default)
 
-# Séparer les canaux de couleur
-red_channel = img_array[:, :, 0]
-green_channel = img_array[:, :, 1]
-blue_channel = img_array[:, :, 2]
+def create_histogram(img_array):
+    # Séparer les canaux de couleur
+    red_channel = img_array[:, :, 0]
+    green_channel = img_array[:, :, 1]
+    blue_channel = img_array[:, :, 2]
 
-fig_hist = go.Figure()
-fig_hist.add_trace(go.Histogram(
-    x=red_channel.ravel(),
-    name='Red', # name used in legend and hover labels
-    marker_color='#FF0000' # Red color
-))
-fig_hist.add_trace(go.Histogram(
-    x=green_channel.ravel(),
-    name='Green',
-    marker_color='#00FF00' # Green color
-))
-fig_hist.add_trace(go.Histogram(
-    x=blue_channel.ravel(),
-    name='Blue',
-    marker_color='#0000FF' # Blue color
-))
+    fig_hist = go.Figure()
+    fig_hist.add_trace(go.Histogram(
+        x=red_channel.ravel(),
+        name='Red', # name used in legend and hover labels
+        marker_color='#FF0000' # Red color
+    ))
+    fig_hist.add_trace(go.Histogram(
+        x=green_channel.ravel(),
+        name='Green',
+        marker_color='#00FF00' # Green color
+    ))
+    fig_hist.add_trace(go.Histogram(
+        x=blue_channel.ravel(),
+        name='Blue',
+        marker_color='#0000FF' # Blue color
+    ))
 
-# Mise en forme de la figure
-fig_hist.update_layout(
-    title='Number of pixels as a function of channel intensity value',
-    xaxis_title='8bit pixel values',
-    yaxis_title='count in ROI'
-)
+    # Mise en forme de la figure
+    fig_hist.update_layout(
+        title='Number of pixels as a function of channel intensity value',
+        xaxis_title='8bit pixel values',
+        yaxis_title='count in ROI'
+    )
+
+    return fig_hist
+
+# Création de l'histogramme de l'image
+fig_hist = create_histogram(img_array)
 
 # Mise à jour de la configuration de la figure pour permettre le dessin de rectangles
 fig.update_layout(dragmode="drawrect", title='Matrix image with annotations')
@@ -66,7 +72,7 @@ app = Dash(__name__)
 app.layout = html.Div(
     [
         dcc.Store(id='image-store', data=img_default.tolist()),  # Stockage de l'image téléchargée
-        html.H1(children="Drag and draw annotations", style={"textAlign": "center"}),  # Titre du tableau de bord
+        html.H1(children="Draw annotations", style={"textAlign": "center"}),  # Titre du tableau de bord
         dcc.Upload(
             id='upload-image',
             children=html.Div(['Drag and Drop or Select a picture']),
@@ -91,6 +97,8 @@ app.layout = html.Div(
             [dcc.Graph(id="histogram", figure=fig_hist),],
             style={"width": "40%", "display": "inline-block", "padding": "0 0"},
         ),
+        html.H4(children="Écrêtage du rouge de l'image (min et max)", style={"margin-bottom": "10px"}), 
+        dcc.RangeSlider(id="red-slider", min=0, max=255, value=[0, 255], allowCross=False, marks={i: str(i) for i in [0, 31, 63, 95, 127, 159, 191, 223, 255]}, tooltip={"placement": "bottom", "always_visible": True}), # Curseur pour ajuster la valeur max de la couleur rouge
         html.Hr(),  # Ligne horizontale pour séparer le graphique des données JSON
         html.Div(children="JSON Output:", style={"margin-bottom": "20px", "margin-top": "20px"}),  # Titre pour les données JSON des annotations
         html.Div(       # Div pour afficher les données JSON des annotations
@@ -100,38 +108,51 @@ app.layout = html.Div(
     ]
 )
 
+
 # Fonction callback pour mettre à jour l'image affichée en fonction de l'image téléchargée
 @callback(
     Output('graph', 'figure'),
     Output('image-store', 'data'), 
-    Input('upload-image', 'contents')
+    Input('red-slider', 'value'),  # Déclenchement de la fonction à chaque fois que le curseur est déplacé
+    Input('upload-image', 'contents') # Déclenchement de la fonction à chaque fois qu'une image est téléchargée
 )
-def update_output(contents):
+def update_output(slider_value, contents):
+    _img_array = img_array
     if contents is not None:
         # Convertir les données de l'image en base64
         img_data = contents.split(",")[1]
         # Décoder les données base64 en tant qu'objet image
         decoded_img = base64.b64decode(img_data)
         img_obj = Image.open(io.BytesIO(decoded_img))
-        img_array = np.array(img_obj)
-        print(img_array.shape)
-        # Créer une nouvelle figure Plotly Express avec l'objet image
-        new_fig = px.imshow(np.array(img_obj))
-        new_fig.update_layout(dragmode="drawrect")
+        _img_array = np.array(img_obj)
+
         # Supprimer les annotations précédentes
         with open('annotations.json', 'w') as f:  # Ouvre un fichier JSON en écriture
             json.dump('', f)  # Écrit les annotations dans le fichier JSON
-        return (new_fig, img_array.tolist())
-    else:
-        return (no_update,) *2
+
+    # Séparer les canaux de couleur
+    img_red = _img_array[:, :, 0]
+    img_green = _img_array[:, :, 1]
+    img_blue = _img_array[:, :, 2]
+
+    print(slider_value)
+    img_red_clipped = np.clip(img_red, slider_value[0], slider_value[1]) # Écrête les valeurs de la couleur rouge
+
+    img_clipped = np.stack([img_red_clipped, img_green, img_blue], axis=-1) # Empile les canaux de couleur pour former une image
+
+    # Créer une nouvelle figure Plotly Express avec l'objet image
+    new_fig = px.imshow(img_clipped)
+    new_fig.update_layout(dragmode="drawrect")
+
+    return (new_fig, img_clipped.tolist())
     
 
 # Fonction callback pour capturer les annotations dessinées && mettre à jour l'histogramme de l'image en fonction de la région d'intérêt (ROI) sélectionnée
-@app.callback(
+@callback(
     Output('output-json', 'children'),  # Mise à jour d'un élément HTML pour afficher les données JSON
     Output("histogram", "figure"), # Mise à jour de l'histogramme de l'image
     Input('graph', 'relayoutData'),  # Déclenchement de la fonction à chaque fois qu'une annotation est dessinée
-    Input('image-store', 'data')  # Déclenchement de la fonction à chaque fois qu'une annotation est dessinée
+    Input('image-store', 'data')
 )
 def save_annotations(relayout_data, img_data):
     print(relayout_data)
@@ -147,34 +168,8 @@ def save_annotations(relayout_data, img_data):
         else:
             roi_img = img  # Récupère l'image entière si aucune annotation n'est trouvée
 
-        # Séparer les canaux de couleur
-        red_channel = roi_img[:, :, 0]
-        green_channel = roi_img[:, :, 1]
-        blue_channel = roi_img[:, :, 2]
-
-        fig_hist = go.Figure()
-        fig_hist.add_trace(go.Histogram(
-            x=red_channel.ravel(),
-            name='Red', # name used in legend and hover labels
-            marker_color='#FF0000' # Red color
-        ))
-        fig_hist.add_trace(go.Histogram(
-            x=green_channel.ravel(),
-            name='Green',
-            marker_color='#00FF00' # Green color
-        ))
-        fig_hist.add_trace(go.Histogram(
-            x=blue_channel.ravel(),
-            name='Blue',
-            marker_color='#0000FF' # Blue color
-        ))
-
-        # Mise en forme de la figure
-        fig_hist.update_layout(
-            title='Number of pixels as a function of channel intensity value',
-            xaxis_title='8bit pixel values',
-            yaxis_title='count in ROI'
-        )
+        # Crée un histogramme de l'image
+        fig_hist = create_histogram(roi_img)  
 
     if relayout_data is not None and 'shapes' in relayout_data:  # Vérifie si des formes ont été dessinées
         annotations = relayout_data['shapes']  # Récupère les annotations dessinées
